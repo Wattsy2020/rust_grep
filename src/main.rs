@@ -1,8 +1,8 @@
 mod matching;
+use matching::match_pattern;
 use std::env;
 use std::io;
 use std::process;
-use matching::match_pattern;
 
 // Usage: echo <input_text> | your_program.sh -E <pattern>
 fn main() {
