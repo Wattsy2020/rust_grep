@@ -1,14 +1,8 @@
+mod matching;
 use std::env;
 use std::io;
 use std::process;
-
-fn match_pattern(input_line: &str, pattern: &str) -> bool {
-    if pattern.chars().count() == 1 {
-        input_line.contains(pattern)
-    } else {
-        panic!("Unhandled pattern: {}", pattern)
-    }
-}
+use matching::match_pattern;
 
 // Usage: echo <input_text> | your_program.sh -E <pattern>
 fn main() {
