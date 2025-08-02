@@ -1,22 +1,15 @@
-const DIGITS: [char; 10] = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
-const LOWERCASE: [char; 26] = [
-    'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's',
-    't', 'u', 'v', 'w', 'x', 'y', 'z',
-];
-const UPPERCASE: [char; 26] = [
-    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S',
-    'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-];
+use crate::character_class;
+use crate::character_class::CharacterClass;
 
 pub fn match_pattern(input_line: &str, pattern: &str) -> bool {
     if pattern.chars().count() == 1 {
         input_line.contains(pattern)
     } else if pattern == "\\d" {
-        input_line.chars().any(|c| DIGITS.contains(&c))
+        let class = character_class::digits();
+        input_line.chars().any(|c| class.matches(&c))
     } else if pattern == "\\w" {
-        input_line.chars().any(|c| {
-            DIGITS.contains(&c) || LOWERCASE.contains(&c) || UPPERCASE.contains(&c) || c == '_'
-        })
+        let class = character_class::alphanumeric();
+        input_line.chars().any(|c| class.matches(&c))
     } else {
         panic!("Unhandled pattern: {}", pattern)
     }

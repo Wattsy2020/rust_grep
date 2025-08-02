@@ -1,4 +1,6 @@
+mod character_class;
 mod matching;
+
 use matching::match_pattern;
 use std::env;
 use std::io;
