@@ -2,16 +2,22 @@ use crate::character_class;
 use crate::character_class::CharacterClass;
 
 pub fn match_pattern(input_line: &str, pattern: &str) -> bool {
-    if pattern.chars().count() == 1 {
-        input_line.contains(pattern)
-    } else if pattern == "\\d" {
-        let class = character_class::digits();
-        input_line.chars().any(|c| class.matches(&c))
-    } else if pattern == "\\w" {
-        let class = character_class::alphanumeric();
-        input_line.chars().any(|c| class.matches(&c))
-    } else {
-        panic!("Unhandled pattern: {}", pattern)
+    let pattern_chars: Vec<char> = pattern.chars().into_iter().collect();
+    match pattern_chars.as_slice() {
+        [_] => input_line.contains(pattern),
+        ['\\', 'd'] => {
+            let class = character_class::digits();
+            input_line.chars().any(|c| class.matches(&c))
+        }
+        ['\\', 'w'] => {
+            let class = character_class::alphanumeric();
+            input_line.chars().any(|c| class.matches(&c))
+        }
+        ['[', chars @ .., ']'] => {
+            let class = character_class::characters(chars);
+            input_line.chars().any(|c| class.matches(&c))
+        }
+        _ => panic!("Unhandled pattern: {}", pattern),
     }
 }
 
@@ -43,5 +49,13 @@ mod tests {
         assert!(match_pattern("1", "\\w"));
         assert!(match_pattern("_", "\\w"));
         assert!(!match_pattern("[]/.,", "\\w"));
+    }
+
+    #[test]
+    fn match_character_groups() {
+        assert!(match_pattern("a", "[abc]"));
+        assert!(match_pattern("123cd5", "[abc]"));
+        assert!(match_pattern("12b2", "[abc]"));
+        assert!(!match_pattern("hello", "[abc]"));
     }
 }
