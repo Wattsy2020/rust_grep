@@ -13,6 +13,10 @@ pub fn match_pattern(input_line: &str, pattern: &str) -> bool {
             let class = character_class::alphanumeric();
             input_line.chars().any(|c| class.matches(&c))
         }
+        ['[', '^', chars @ .., ']'] => {
+            let class = character_class::characters(chars).negate();
+            input_line.chars().any(|c| class.matches(&c))
+        }
         ['[', chars @ .., ']'] => {
             let class = character_class::characters(chars);
             input_line.chars().any(|c| class.matches(&c))
@@ -57,5 +61,15 @@ mod tests {
         assert!(match_pattern("123cd5", "[abc]"));
         assert!(match_pattern("12b2", "[abc]"));
         assert!(!match_pattern("hello", "[abc]"));
+    }
+
+    #[test]
+    fn match_negative_character_groups() {
+        assert!(!match_pattern("a", "[^abc]"));
+        assert!(!match_pattern("cab", "[^abc]"));
+        assert!(match_pattern("scab", "[^abc]"));
+        assert!(match_pattern("123cd5", "[^abc]"));
+        assert!(match_pattern("12b2", "[^abc]"));
+        assert!(match_pattern("hello", "[^abc]"));
     }
 }
