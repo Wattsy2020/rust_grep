@@ -1,11 +1,12 @@
-use crate::pattern::union_pattern::UnionPattern;
+use crate::pattern::union_pattern::union;
 
+#[derive(Debug, Eq, PartialEq)]
 pub enum Match {
-    Match { 
+    Match {
         /// Start index of the match (inclusive)
-        start: usize, 
+        start: usize,
         /// End index of the match (exclusive)
-        end: usize 
+        end: usize,
     },
     None,
 }
@@ -29,7 +30,25 @@ pub trait Pattern {
     }
 
     /// Create a new pattern that matches when this pattern and the next pattern match consecutively
-    fn followed_by(self, pattern: Box<dyn Pattern>) -> Box<dyn Pattern> where Self: Sized + 'static {
-        Box::new(UnionPattern::union(Box::new(self), pattern))
+    fn followed_by(self, pattern: Box<dyn Pattern>) -> Box<dyn Pattern>
+    where
+        Self: Sized + 'static,
+    {
+        Box::new(union(Box::new(self), pattern))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::pattern::character_pattern::literal;
+
+    #[test]
+    fn test_matches() {
+        let pattern = literal('a');
+        assert!(!pattern.matches_exact("bacd").is_match());
+        assert!(pattern.matches("bacd"));
+        assert!(pattern.matches("a"));
+        assert!(pattern.matches("super long sentence with a"));
     }
 }

@@ -4,3 +4,4 @@ mod literal_character_class;
 
 pub use char_group_class::*;
 pub use character_class::*;
+pub use literal_character_class::literal;

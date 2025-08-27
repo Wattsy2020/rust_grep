@@ -1,0 +1,43 @@
+use crate::character_class::CharacterClass;
+use crate::pattern::{Match, Pattern};
+
+struct CharacterPattern {
+    character_class: Box<dyn CharacterClass>,
+}
+
+pub fn character(character_class: Box<dyn CharacterClass>) -> impl Pattern {
+    CharacterPattern { character_class }
+}
+
+pub fn literal(char: char) -> impl Pattern {
+    character(Box::new(crate::character_class::literal(char)))
+}
+
+impl Pattern for CharacterPattern {
+    fn matches_exact(&self, string: &str) -> Match {
+        match string.chars().next() {
+            None => Match::None,
+            Some(char) => match self.character_class.matches(char) {
+                false => Match::None,
+                true => Match::Match { start: 0, end: 1 },
+            },
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_match() {
+        let pattern = literal('a');
+        assert_eq!(
+            pattern.matches_exact("abcd"),
+            Match::Match { start: 0, end: 1 }
+        );
+        assert_eq!(pattern.matches_exact("babcd"), Match::None);
+        assert_eq!(pattern.matches_exact("b"), Match::None);
+        assert_eq!(pattern.matches_exact(""), Match::None);
+    }
+}

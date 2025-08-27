@@ -1,13 +1,6 @@
 use crate::character_class;
 use crate::character_class::CharacterClass;
 
-// 1. Create a Pattern class that matches a string
-// Can construct a pattern from one CharacterClass, then chain it with .followed_by(pattern class)
-// So that it requires one character class, immediately followed by another
-// 2. Add literal character class
-// 3. Add test for character pattern combined with another character pattern
-// Can then refactor the below function, so that it first creates the pattern class, then checks if it matches the input line
-
 pub fn match_pattern(input_line: &str, pattern: &str) -> bool {
     let pattern_chars: Vec<char> = pattern.chars().into_iter().collect();
     match pattern_chars.as_slice() {
