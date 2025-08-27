@@ -9,8 +9,8 @@ pub struct CharacterGroupClassBoxed {
 }
 
 impl<const N: usize> CharacterClass for CharacterGroupClass<N> {
-    fn matches(&self, character: &char) -> bool {
-        self.valid_chars.contains(character)
+    fn matches(&self, character: char) -> bool {
+        self.valid_chars.contains(&character)
     }
 }
 
@@ -27,8 +27,8 @@ impl<const N: usize> CharacterGroupClass<N> {
 }
 
 impl CharacterClass for CharacterGroupClassBoxed {
-    fn matches(&self, character: &char) -> bool {
-        self.valid_chars.contains(character)
+    fn matches(&self, character: char) -> bool {
+        self.valid_chars.contains(&character)
     }
 }
 

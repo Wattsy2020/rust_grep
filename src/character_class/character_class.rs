@@ -1,5 +1,5 @@
 pub trait CharacterClass {
-    fn matches(&self, character: &char) -> bool;
+    fn matches(&self, character: char) -> bool;
 
     fn union<T: CharacterClass>(self, other: T) -> UnionCharacterClass<Self, T>
     where
@@ -25,7 +25,7 @@ pub struct UnionCharacterClass<T1: CharacterClass, T2: CharacterClass> {
 }
 
 impl<T1: CharacterClass, T2: CharacterClass> CharacterClass for UnionCharacterClass<T1, T2> {
-    fn matches(&self, character: &char) -> bool {
+    fn matches(&self, character: char) -> bool {
         self.first.matches(character) || self.second.matches(character)
     }
 }
@@ -35,7 +35,7 @@ pub struct NegativeCharacterClass<T: CharacterClass> {
 }
 
 impl<T: CharacterClass> CharacterClass for NegativeCharacterClass<T> {
-    fn matches(&self, character: &char) -> bool {
+    fn matches(&self, character: char) -> bool {
         !self.class.matches(character)
     }
 }

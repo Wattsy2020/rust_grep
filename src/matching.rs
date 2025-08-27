@@ -14,19 +14,19 @@ pub fn match_pattern(input_line: &str, pattern: &str) -> bool {
         [_] => input_line.contains(pattern),
         ['\\', 'd'] => {
             let class = character_class::digits();
-            input_line.chars().any(|c| class.matches(&c))
+            input_line.chars().any(|c| class.matches(c))
         }
         ['\\', 'w'] => {
             let class = character_class::alphanumeric();
-            input_line.chars().any(|c| class.matches(&c))
+            input_line.chars().any(|c| class.matches(c))
         }
         ['[', '^', chars @ .., ']'] => {
             let class = character_class::characters(chars).negate();
-            input_line.chars().any(|c| class.matches(&c))
+            input_line.chars().any(|c| class.matches(c))
         }
         ['[', chars @ .., ']'] => {
             let class = character_class::characters(chars);
-            input_line.chars().any(|c| class.matches(&c))
+            input_line.chars().any(|c| class.matches(c))
         }
         _ => panic!("Unhandled pattern: {}", pattern),
     }

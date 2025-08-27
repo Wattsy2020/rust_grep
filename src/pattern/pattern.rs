@@ -22,9 +22,7 @@ impl Match {
 pub trait Pattern {
     /// Whether the Pattern matches starting from the first character of the string
     fn matches_exact(&self, string: &str) -> Match;
-}
 
-pub trait PatternExtensions: Pattern {
     /// Whether the Pattern matches starting from any character in the string
     fn matches(&self, string: &str) -> bool {
         (0..string.len()).any(|i| self.matches_exact(&string[i..]).is_match())
