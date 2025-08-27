@@ -1,3 +1,4 @@
+use std::ops::Deref;
 use crate::pattern::union_pattern::union;
 
 #[derive(Debug, Eq, PartialEq)]
@@ -35,6 +36,22 @@ pub trait Pattern {
         Self: Sized + 'static,
     {
         Box::new(union(Box::new(self), pattern))
+    }
+}
+
+impl Pattern for Box<dyn Pattern> {
+    fn matches_exact(&self, string: &str) -> Match {
+        self.deref().matches_exact(string)
+    }
+
+    fn matches(&self, string: &str) -> bool {
+        self.deref().matches(string)
+    }
+
+    fn followed_by(self, pattern: Box<dyn Pattern>) -> Box<dyn Pattern>
+        where Self: 'static
+    {
+        Box::new(union(self, pattern))
     }
 }
 

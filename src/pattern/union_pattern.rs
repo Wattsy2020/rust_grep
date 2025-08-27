@@ -39,7 +39,7 @@ mod tests {
 
     #[test]
     fn test_literal_combination() {
-        let combined = union(Box::new(literal('a')), Box::new(literal('b')));
+        let combined = literal('a').followed_by(Box::new(literal('b')));
         assert_eq!(
             combined.matches_exact("abcd"),
             Match::Match { start: 0, end: 2 }
@@ -51,8 +51,9 @@ mod tests {
 
     #[test]
     fn test_literal_combination_of_three_characters() {
-        let combined2 = union(Box::new(literal('a')), Box::new(literal('b')));
-        let combined3 = union(Box::new(combined2), Box::new(literal('c')));
+        let combined3 = literal('a')
+            .followed_by(Box::new(literal('b')))
+            .followed_by(Box::new(literal('c')));    
         assert_eq!(
             combined3.matches_exact("abcd"),
             Match::Match { start: 0, end: 3 }
