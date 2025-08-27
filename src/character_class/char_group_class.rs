@@ -35,7 +35,7 @@ impl CharacterClass for CharacterGroupClassBoxed {
 impl<const N: usize> From<CharacterGroupClass<N>> for CharacterGroupClassBoxed {
     fn from(value: CharacterGroupClass<N>) -> Self {
         CharacterGroupClassBoxed {
-            valid_chars: Box::new(value.valid_chars)
+            valid_chars: Box::new(value.valid_chars),
         }
     }
 }
@@ -43,10 +43,10 @@ impl<const N: usize> From<CharacterGroupClass<N>> for CharacterGroupClassBoxed {
 impl CharacterGroupClassBoxed {
     pub fn of(character: char) -> CharacterGroupClassBoxed {
         CharacterGroupClassBoxed {
-            valid_chars: Box::new([character])
+            valid_chars: Box::new([character]),
         }
     }
-    
+
     pub fn union(self, other: CharacterGroupClassBoxed) -> CharacterGroupClassBoxed {
         CharacterGroupClassBoxed {
             valid_chars: [self.valid_chars, other.valid_chars]
@@ -74,11 +74,15 @@ pub fn alphabetical() -> CharacterGroupClassBoxed {
 }
 
 pub fn alphanumeric() -> CharacterGroupClassBoxed {
-    alphabetical().union(CharacterGroupClassBoxed::of('_')).union(DIGITS.into())
+    alphabetical()
+        .union(CharacterGroupClassBoxed::of('_'))
+        .union(DIGITS.into())
 }
 
 pub fn characters(chars: &[char]) -> CharacterGroupClassBoxed {
-    CharacterGroupClassBoxed { valid_chars: chars.into() }
+    CharacterGroupClassBoxed {
+        valid_chars: chars.into(),
+    }
 }
 
 const DIGITS: CharacterGroupClass<10> = CharacterGroupClass {

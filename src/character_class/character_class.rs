@@ -11,7 +11,9 @@ pub trait CharacterClass {
         }
     }
 
-    fn negate(self) -> NegativeCharacterClass<Self> where Self: Sized
+    fn negate(self) -> NegativeCharacterClass<Self>
+    where
+        Self: Sized,
     {
         NegativeCharacterClass { class: self }
     }
