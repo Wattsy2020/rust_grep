@@ -1,3 +1,4 @@
+use std::fmt::Debug;
 use std::ops::Deref;
 use crate::pattern::union_pattern::union;
 

@@ -1,5 +1,6 @@
 mod character_class;
 mod matching;
+mod parse;
 mod pattern;
 
 use matching::match_pattern;
