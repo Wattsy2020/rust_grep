@@ -11,24 +11,14 @@ pub fn union(first: Box<dyn Pattern>, second: Box<dyn Pattern>) -> impl Pattern 
 
 impl Pattern for UnionPattern {
     fn matches_exact(&self, chars: &[char]) -> Match {
-        match self.first.matches_exact(chars) {
-            Match::None => Match::None,
-            Match::Match {
-                start: first_start,
-                end: first_end,
-            } => match self.second.matches_exact(&chars[first_end..]) {
-                Match::None => Match::None,
-                Match::Match {
-                    start: _,
-                    end: second_end,
-                } => Match::Match {
-                    start: first_start,
+        self.first.matches_exact(chars).and_then(|first_match| {
+            self.second
+                .matches_exact(&chars[first_match.end..])
+                .and_then(|second_match|
                     // because the second.matches_exact sees the string starting at first_end
-                    // the actual idx in the original string is first_end + second_end
-                    end: first_end + second_end,
-                },
-            },
-        }
+                    // the actual ending idx in the original string is first_end + second_end
+                    Match::at(first_match.start, first_match.end + second_match.end))
+        })
     }
 }
 
@@ -40,10 +30,7 @@ mod tests {
     #[test]
     fn test_literal_combination() {
         let combined = literal('a').followed_by(Box::new(literal('b')));
-        assert_eq!(
-            combined.matches_exact_str("abcd"),
-            Match::Match { start: 0, end: 2 }
-        );
+        assert_eq!(combined.matches_exact_str("abcd"), Match::at(0, 2));
         assert_eq!(combined.matches_exact_str("aabcd"), Match::None);
         assert_eq!(combined.matches_exact_str("a"), Match::None);
         assert_eq!(combined.matches_exact_str(""), Match::None);
@@ -54,10 +41,7 @@ mod tests {
         let combined3 = literal('a')
             .followed_by(Box::new(literal('b')))
             .followed_by(Box::new(literal('c')));
-        assert_eq!(
-            combined3.matches_exact_str("abcd"),
-            Match::Match { start: 0, end: 3 }
-        );
+        assert_eq!(combined3.matches_exact_str("abcd"), Match::at(0, 3));
         assert_eq!(combined3.matches_exact_str("aabcd"), Match::None);
         assert_eq!(combined3.matches_exact_str("ab"), Match::None);
         assert_eq!(combined3.matches_exact_str("a"), Match::None);
@@ -70,9 +54,6 @@ mod tests {
             .followed_by(Box::new(literal('-')))
             .followed_by(Box::new(literal('×')))
             .followed_by(Box::new(literal('_')));
-        assert_eq!(
-            combined.matches_exact_str("#-×_=%-"),
-            Match::Match { start: 0, end: 4 }
-        )
+        assert_eq!(combined.matches_exact_str("#-×_=%-"), Match::at(0, 4))
     }
 }

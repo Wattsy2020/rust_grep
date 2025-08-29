@@ -1,10 +1,10 @@
-use crate::pattern::{Match, Pattern};
+use crate::pattern::{Pattern, Match};
 
 struct AlwaysMatch {}
 
 impl Pattern for AlwaysMatch {
     fn matches_exact(&self, _: &[char]) -> Match {
-        Match::Match { start: 0, end: 0 }
+        Match::at(0, 0)
     }
 }
 

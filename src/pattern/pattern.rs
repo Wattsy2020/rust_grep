@@ -1,26 +1,6 @@
 use crate::pattern::union_pattern::union;
-use std::fmt::Debug;
 use std::ops::Deref;
-
-#[derive(Debug, Eq, PartialEq)]
-pub enum Match {
-    Match {
-        /// Start index of the match (inclusive)
-        start: usize,
-        /// End index of the match (exclusive)
-        end: usize,
-    },
-    None,
-}
-
-impl Match {
-    pub fn is_match(&self) -> bool {
-        match self {
-            Match::Match { .. } => true,
-            Match::None => false,
-        }
-    }
-}
+use crate::pattern::Match;
 
 pub trait Pattern {
     /// Whether the Pattern matches starting from the first character

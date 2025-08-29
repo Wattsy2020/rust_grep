@@ -19,7 +19,7 @@ impl Pattern for CharacterPattern {
             None => Match::None,
             Some(char) => match self.character_class.matches(*char) {
                 false => Match::None,
-                true => Match::Match { start: 0, end: 1 },
+                true => Match::at(0, 1),
             },
         }
     }
@@ -32,10 +32,7 @@ mod tests {
     #[test]
     fn test_match() {
         let pattern = literal('a');
-        assert_eq!(
-            pattern.matches_exact_str("abcd"),
-            Match::Match { start: 0, end: 1 }
-        );
+        assert_eq!(pattern.matches_exact_str("abcd"), Match::at(0, 1));
         assert_eq!(pattern.matches_exact_str("babcd"), Match::None);
         assert_eq!(pattern.matches_exact_str("b"), Match::None);
         assert_eq!(pattern.matches_exact_str(""), Match::None);
