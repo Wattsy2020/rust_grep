@@ -109,5 +109,6 @@ mod tests {
     #[test]
     fn handle_unicode() {
         assert!(match_pattern("#-×_=%-", "\\w"));
+        assert!(!match_pattern("%=#÷+×", "\\w"));
     }
 }

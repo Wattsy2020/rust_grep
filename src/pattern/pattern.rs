@@ -15,7 +15,7 @@ pub trait Pattern {
     /// Whether the Pattern matches starting from any character in the string
     fn matches(&self, string: &str) -> bool {
         let chars: Box<[char]> = string.chars().collect();
-        (0..string.len()).any(|i| self.matches_exact(&chars[i..]).is_match())
+        (0..chars.len()).any(|i| self.matches_exact(&chars[i..]).is_match())
     }
 
     /// Create a new pattern that matches when this pattern and the next pattern match consecutively
