@@ -105,4 +105,9 @@ mod tests {
         assert!(match_pattern("a 1z d", "[abc] \\d\\w [def]"));
         assert!(!match_pattern("a 1z g", "[abc] \\d\\w [def]"));
     }
+
+    #[test]
+    fn handle_unicode() {
+        assert!(match_pattern("#-×_=%-", "\\w"));
+    }
 }

@@ -1,6 +1,6 @@
+use crate::pattern::union_pattern::union;
 use std::fmt::Debug;
 use std::ops::Deref;
-use crate::pattern::union_pattern::union;
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum Match {
@@ -23,12 +23,19 @@ impl Match {
 }
 
 pub trait Pattern {
+    /// Whether the Pattern matches starting from the first character
+    fn matches_exact(&self, chars: &[char]) -> Match;
+
     /// Whether the Pattern matches starting from the first character of the string
-    fn matches_exact(&self, string: &str) -> Match;
+    fn matches_exact_str(&self, string: &str) -> Match {
+        let chars: Box<[char]> = string.chars().collect();
+        self.matches_exact(&chars)
+    }
 
     /// Whether the Pattern matches starting from any character in the string
     fn matches(&self, string: &str) -> bool {
-        (0..string.len()).any(|i| self.matches_exact(&string[i..]).is_match())
+        let chars: Box<[char]> = string.chars().collect();
+        (0..string.len()).any(|i| self.matches_exact(&chars[i..]).is_match())
     }
 
     /// Create a new pattern that matches when this pattern and the next pattern match consecutively
@@ -41,16 +48,13 @@ pub trait Pattern {
 }
 
 impl Pattern for Box<dyn Pattern> {
-    fn matches_exact(&self, string: &str) -> Match {
-        self.deref().matches_exact(string)
-    }
-
-    fn matches(&self, string: &str) -> bool {
-        self.deref().matches(string)
+    fn matches_exact(&self, chars: &[char]) -> Match {
+        self.deref().matches_exact(chars)
     }
 
     fn followed_by(self, pattern: Box<dyn Pattern>) -> Box<dyn Pattern>
-        where Self: 'static
+    where
+        Self: 'static,
     {
         Box::new(union(self, pattern))
     }
@@ -64,9 +68,16 @@ mod tests {
     #[test]
     fn test_matches() {
         let pattern = literal('a');
-        assert!(!pattern.matches_exact("bacd").is_match());
+        assert!(!pattern.matches_exact_str("bacd").is_match());
         assert!(pattern.matches("bacd"));
         assert!(pattern.matches("a"));
         assert!(pattern.matches("super long sentence with a"));
+    }
+
+    #[test]
+    fn test_matches_handles_unicode() {
+        assert!(literal('×').matches("#-×_=%-"));
+        assert!(literal('-').matches("#-×_=%-"));
+        assert!(!literal('a').matches("#-×_=%-"));
     }
 }

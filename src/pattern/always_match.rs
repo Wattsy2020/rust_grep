@@ -3,7 +3,7 @@ use crate::pattern::{Match, Pattern};
 struct AlwaysMatch {}
 
 impl Pattern for AlwaysMatch {
-    fn matches_exact(&self, string: &str) -> Match {
+    fn matches_exact(&self, _: &[char]) -> Match {
         Match::Match { start: 0, end: 0 }
     }
 }
@@ -19,8 +19,8 @@ mod tests {
     #[test]
     fn always_matches() {
         let pattern = always_match();
-        assert!(pattern.matches_exact("hello").is_match());
-        assert!(pattern.matches_exact("h").is_match());
-        assert!(pattern.matches_exact("").is_match());
+        assert!(pattern.matches_exact_str("hello").is_match());
+        assert!(pattern.matches_exact_str("h").is_match());
+        assert!(pattern.matches_exact_str("").is_match());
     }
 }

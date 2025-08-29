@@ -14,10 +14,10 @@ pub fn literal(char: char) -> impl Pattern {
 }
 
 impl Pattern for CharacterPattern {
-    fn matches_exact(&self, string: &str) -> Match {
-        match string.chars().next() {
+    fn matches_exact(&self, chars: &[char]) -> Match {
+        match chars.first() {
             None => Match::None,
-            Some(char) => match self.character_class.matches(char) {
+            Some(char) => match self.character_class.matches(*char) {
                 false => Match::None,
                 true => Match::Match { start: 0, end: 1 },
             },
@@ -33,11 +33,11 @@ mod tests {
     fn test_match() {
         let pattern = literal('a');
         assert_eq!(
-            pattern.matches_exact("abcd"),
+            pattern.matches_exact_str("abcd"),
             Match::Match { start: 0, end: 1 }
         );
-        assert_eq!(pattern.matches_exact("babcd"), Match::None);
-        assert_eq!(pattern.matches_exact("b"), Match::None);
-        assert_eq!(pattern.matches_exact(""), Match::None);
+        assert_eq!(pattern.matches_exact_str("babcd"), Match::None);
+        assert_eq!(pattern.matches_exact_str("b"), Match::None);
+        assert_eq!(pattern.matches_exact_str(""), Match::None);
     }
 }

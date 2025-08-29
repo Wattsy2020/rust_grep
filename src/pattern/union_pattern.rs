@@ -10,13 +10,13 @@ pub fn union(first: Box<dyn Pattern>, second: Box<dyn Pattern>) -> impl Pattern 
 }
 
 impl Pattern for UnionPattern {
-    fn matches_exact(&self, string: &str) -> Match {
-        match self.first.matches_exact(string) {
+    fn matches_exact(&self, chars: &[char]) -> Match {
+        match self.first.matches_exact(chars) {
             Match::None => Match::None,
             Match::Match {
                 start: first_start,
                 end: first_end,
-            } => match self.second.matches_exact(&string[first_end..]) {
+            } => match self.second.matches_exact(&chars[first_end..]) {
                 Match::None => Match::None,
                 Match::Match {
                     start: _,
@@ -41,26 +41,38 @@ mod tests {
     fn test_literal_combination() {
         let combined = literal('a').followed_by(Box::new(literal('b')));
         assert_eq!(
-            combined.matches_exact("abcd"),
+            combined.matches_exact_str("abcd"),
             Match::Match { start: 0, end: 2 }
         );
-        assert_eq!(combined.matches_exact("aabcd"), Match::None);
-        assert_eq!(combined.matches_exact("a"), Match::None);
-        assert_eq!(combined.matches_exact(""), Match::None);
+        assert_eq!(combined.matches_exact_str("aabcd"), Match::None);
+        assert_eq!(combined.matches_exact_str("a"), Match::None);
+        assert_eq!(combined.matches_exact_str(""), Match::None);
     }
 
     #[test]
     fn test_literal_combination_of_three_characters() {
         let combined3 = literal('a')
             .followed_by(Box::new(literal('b')))
-            .followed_by(Box::new(literal('c')));    
+            .followed_by(Box::new(literal('c')));
         assert_eq!(
-            combined3.matches_exact("abcd"),
+            combined3.matches_exact_str("abcd"),
             Match::Match { start: 0, end: 3 }
         );
-        assert_eq!(combined3.matches_exact("aabcd"), Match::None);
-        assert_eq!(combined3.matches_exact("ab"), Match::None);
-        assert_eq!(combined3.matches_exact("a"), Match::None);
-        assert_eq!(combined3.matches_exact(""), Match::None);
+        assert_eq!(combined3.matches_exact_str("aabcd"), Match::None);
+        assert_eq!(combined3.matches_exact_str("ab"), Match::None);
+        assert_eq!(combined3.matches_exact_str("a"), Match::None);
+        assert_eq!(combined3.matches_exact_str(""), Match::None);
+    }
+
+    #[test]
+    fn test_union_handles_unicode() {
+        let combined = literal('#')
+            .followed_by(Box::new(literal('-')))
+            .followed_by(Box::new(literal('×')))
+            .followed_by(Box::new(literal('_')));
+        assert_eq!(
+            combined.matches_exact_str("#-×_=%-"),
+            Match::Match { start: 0, end: 4 }
+        )
     }
 }
