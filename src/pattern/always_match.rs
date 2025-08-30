@@ -1,4 +1,4 @@
-use crate::pattern::{Pattern, Match};
+use crate::pattern::{Match, Pattern};
 
 struct AlwaysMatch {}
 

@@ -16,7 +16,7 @@ mod tests {
 
     #[test]
     fn test_split_at() {
-        let chars: Vec<char> = "[hello] world".chars().collect();
+        let chars: Box<[char]> = "[hello] world".chars().collect();
         let result = split_at(&chars, ']');
         assert!(matches!(
             result,
@@ -29,17 +29,17 @@ mod tests {
 
     #[test]
     fn test_split_at_end_separator() {
-        let chars: Vec<char> = "[hello]".chars().collect();
+        let chars: Box<[char]> = "[hello]".chars().collect();
         let result = split_at(&chars, ']');
         assert!(matches!(result, Some((['[', 'h', 'e', 'l', 'l', 'o'], []))));
     }
 
     #[test]
     fn test_split_at_empty() {
-        let chars: Vec<char> = vec![']'];
+        let chars = [']'];
         let result = split_at(&chars, ']');
         assert!(matches!(result, Some(([], []))));
-        
+
         assert!(matches!(split_at(&[], ']'), None));
     }
 }

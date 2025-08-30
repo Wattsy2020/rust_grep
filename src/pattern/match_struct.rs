@@ -27,7 +27,7 @@ impl Match {
     pub fn and_then<F: FnOnce(&MatchIndices) -> Match>(&self, f: F) -> Match {
         match self {
             Match::None => Match::None,
-            Match::Match(indices) => f(indices)
+            Match::Match(indices) => f(indices),
         }
     }
 }

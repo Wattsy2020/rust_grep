@@ -1,6 +1,6 @@
 use crate::pattern::union_pattern::union;
-use std::ops::Deref;
 use crate::pattern::Match;
+use std::ops::Deref;
 
 pub trait Pattern {
     /// Whether the Pattern matches starting from the first character

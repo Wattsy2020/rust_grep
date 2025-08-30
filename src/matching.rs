@@ -1,38 +1,57 @@
 use crate::character_class::{alphanumeric, characters, digits, CharacterClass};
+use crate::matching::ParsePatternError::UnmatchedBracket;
 use crate::parse::split_at;
 use crate::pattern::{always_match, character, literal, Pattern};
+use thiserror::Error;
+
+#[derive(Error, Debug, PartialEq, Clone)]
+enum ParsePatternError {
+    #[error("unmatched opening bracket at col number {0}")]
+    UnmatchedBracket(usize),
+}
 
 fn from_character_class(class: impl CharacterClass + 'static) -> Box<dyn Pattern> {
     Box::new(character(Box::new(class)))
 }
 
-fn construct_pattern(pattern_chars: &[char]) -> Box<dyn Pattern> {
+fn construct_pattern(
+    pattern_chars: &[char],
+    char_idx: usize,
+) -> Result<Box<dyn Pattern>, ParsePatternError> {
     match pattern_chars {
-        ['\\', char, remaining @ ..] => (match char {
+        ['\\', char, remaining @ ..] => Ok((match char {
             'd' => from_character_class(digits()),
             'w' => from_character_class(alphanumeric()),
             // if escape isn't followed by an escaped character, assume it is a literal escape
             _ => literal('\\').followed_by(Box::new(literal(*char))),
         })
-        .followed_by(construct_pattern(remaining)),
+        .followed_by(construct_pattern(remaining, char_idx + 2)?)),
         // we match starting from the '[' part, and then manually check for the first closing ']'
         ['[', remaining @ ..] => match split_at(remaining, ']') {
-            None => panic!("Unmatched square bracket"),
-            Some((chars, remaining)) => (match chars {
+            None => Err(UnmatchedBracket(char_idx)),
+            Some((chars, remaining)) => Ok((match chars {
                 ['^', chars @ ..] => from_character_class(characters(chars).negate()),
                 _ => from_character_class(characters(chars)),
             })
-            .followed_by(construct_pattern(remaining)),
+            .followed_by(construct_pattern(remaining, char_idx + chars.len() + 2)?)),
         },
-        [char, remaining @ ..] => literal(*char).followed_by(construct_pattern(remaining)),
-        [] => Box::new(always_match()), // an empty pattern matches anything
+        [char, remaining @ ..] => {
+            Ok(literal(*char).followed_by(construct_pattern(remaining, char_idx + 1)?))
+        }
+        [] => Ok(Box::new(always_match())), // an empty pattern matches anything
     }
 }
 
+fn construct_pattern_from_str(pattern: &str) -> Result<Box<dyn Pattern>, ParsePatternError> {
+    let pattern_chars: Box<[char]> = pattern.chars().collect();
+    construct_pattern(&pattern_chars, 0)
+}
+
 pub fn match_pattern(input_line: &str, pattern: &str) -> bool {
-    let pattern_chars: Vec<char> = pattern.chars().into_iter().collect();
-    let pattern = construct_pattern(&pattern_chars);
-    pattern.matches(input_line)
+    match construct_pattern_from_str(pattern) {
+        Err(error) => panic!("Invalid pattern: {error:?}"),
+        Ok(pattern) => pattern.matches(input_line),
+    }
 }
 
 #[cfg(test)]
@@ -110,5 +129,16 @@ mod tests {
     fn handle_unicode() {
         assert!(match_pattern("#-×_=%-", "\\w"));
         assert!(!match_pattern("%=#÷+×", "\\w"));
+    }
+
+    #[test]
+    fn report_unmatching_brackets() {
+        // todo: implement debug for Pattern, so I can directly compare the Result<Pattern, Err> type
+        let error = construct_pattern_from_str("[abcde").err().unwrap();
+        assert_eq!(error, UnmatchedBracket(0));
+        let error = construct_pattern_from_str("ab[cde").err().unwrap();
+        assert_eq!(error, UnmatchedBracket(2));
+        let error = construct_pattern_from_str("[ab][cde").err().unwrap();
+        assert_eq!(error, UnmatchedBracket(4))
     }
 }
