@@ -1,5 +1,6 @@
 use crate::pattern::{Match, Pattern};
 
+#[derive(Debug)]
 struct UnionPattern {
     first: Box<dyn Pattern>,
     second: Box<dyn Pattern>,

@@ -1,6 +1,7 @@
 use crate::character_class::CharacterClass;
 use crate::pattern::{Match, Pattern};
 
+#[derive(Debug)]
 struct CharacterPattern {
     character_class: Box<dyn CharacterClass>,
 }

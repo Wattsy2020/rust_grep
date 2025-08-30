@@ -1,8 +1,9 @@
 use crate::pattern::union_pattern::union;
 use crate::pattern::Match;
+use std::fmt::Debug;
 use std::ops::Deref;
 
-pub trait Pattern {
+pub trait Pattern: Debug {
     /// Whether the Pattern matches starting from the first character
     fn matches_exact(&self, chars: &[char]) -> Match;
 
@@ -30,6 +31,14 @@ pub trait Pattern {
 impl Pattern for Box<dyn Pattern> {
     fn matches_exact(&self, chars: &[char]) -> Match {
         self.deref().matches_exact(chars)
+    }
+
+    fn matches_exact_str(&self, string: &str) -> Match {
+        self.deref().matches_exact_str(string)
+    }
+
+    fn matches(&self, string: &str) -> bool {
+        self.deref().matches(string)
     }
 
     fn followed_by(self, pattern: Box<dyn Pattern>) -> Box<dyn Pattern>

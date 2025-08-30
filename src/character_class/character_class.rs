@@ -1,4 +1,6 @@
-pub trait CharacterClass {
+use std::fmt::Debug;
+
+pub trait CharacterClass: Debug {
     fn matches(&self, character: char) -> bool;
 
     fn union<T: CharacterClass>(self, other: T) -> UnionCharacterClass<Self, T>
@@ -19,6 +21,7 @@ pub trait CharacterClass {
     }
 }
 
+#[derive(Debug)]
 pub struct UnionCharacterClass<T1: CharacterClass, T2: CharacterClass> {
     first: T1,
     second: T2,
@@ -30,6 +33,7 @@ impl<T1: CharacterClass, T2: CharacterClass> CharacterClass for UnionCharacterCl
     }
 }
 
+#[derive(Debug)]
 pub struct NegativeCharacterClass<T: CharacterClass> {
     class: T,
 }

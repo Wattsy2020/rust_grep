@@ -1,9 +1,11 @@
 use crate::character_class::CharacterClass;
 
+#[derive(Debug)]
 pub struct CharacterGroupClass<const N: usize> {
     valid_chars: [char; N],
 }
 
+#[derive(Debug)]
 pub struct CharacterGroupClassBoxed {
     valid_chars: Box<[char]>,
 }

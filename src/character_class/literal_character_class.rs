@@ -1,5 +1,6 @@
 use crate::character_class::CharacterClass;
 
+#[derive(Debug)]
 struct LiteralCharacterClass {
     literal: char,
 }

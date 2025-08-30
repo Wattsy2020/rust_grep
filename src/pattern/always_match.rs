@@ -1,5 +1,6 @@
 use crate::pattern::{Match, Pattern};
 
+#[derive(Debug)]
 struct AlwaysMatch {}
 
 impl Pattern for AlwaysMatch {

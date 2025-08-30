@@ -1,12 +1,16 @@
 use crate::character_class::{alphanumeric, characters, digits, CharacterClass};
-use crate::matching::ParsePatternError::UnmatchedBracket;
+use crate::matching::ParsePatternError::{InvalidStartLineAnchor, UnmatchedBracket};
 use crate::parse::split_at;
-use crate::pattern::{always_match, character, literal, Pattern};
+use crate::pattern::{always_match, character, literal, start_line_anchor, Pattern};
 use thiserror::Error;
 
 #[derive(Error, Debug, PartialEq, Clone)]
 enum ParsePatternError {
-    #[error("unmatched opening bracket at col number {0}")]
+    #[error(
+        "Start line anchor must be at the start of the pattern, instead found it at col number {0}"
+    )]
+    InvalidStartLineAnchor(usize),
+    #[error("Unmatched opening bracket at col number {0}")]
     UnmatchedBracket(usize),
 }
 
@@ -19,6 +23,13 @@ fn construct_pattern(
     char_idx: usize,
 ) -> Result<Box<dyn Pattern>, ParsePatternError> {
     match pattern_chars {
+        ['^', remaining @ ..] => match char_idx {
+            0 => Ok(Box::new(start_line_anchor(construct_pattern(
+                remaining,
+                char_idx + 1,
+            )?))),
+            _ => Err(InvalidStartLineAnchor(char_idx)),
+        },
         ['\\', char, remaining @ ..] => Ok((match char {
             'd' => from_character_class(digits()),
             'w' => from_character_class(alphanumeric()),
@@ -50,7 +61,11 @@ fn construct_pattern_from_str(pattern: &str) -> Result<Box<dyn Pattern>, ParsePa
 pub fn match_pattern(input_line: &str, pattern: &str) -> bool {
     match construct_pattern_from_str(pattern) {
         Err(error) => panic!("Invalid pattern: {error:?}"),
-        Ok(pattern) => pattern.matches(input_line),
+        Ok(pattern) => {
+            let pattern_str = format!("{pattern:?}");
+            println!("{pattern_str}");
+            pattern.matches(input_line)
+        }
     }
 }
 
@@ -132,13 +147,30 @@ mod tests {
     }
 
     #[test]
+    fn handle_start_line_anchor() {
+        assert!(match_pattern("abcd", "^a"));
+        assert!(!match_pattern(" abcd", "^a"));
+        assert!(!match_pattern("baaaa", "^a"));
+    }
+
+    #[test]
     fn report_unmatching_brackets() {
-        // todo: implement debug for Pattern, so I can directly compare the Result<Pattern, Err> type
+        // todo: implement PartialEq, Eq for Pattern, so I can compare here
         let error = construct_pattern_from_str("[abcde").err().unwrap();
         assert_eq!(error, UnmatchedBracket(0));
         let error = construct_pattern_from_str("ab[cde").err().unwrap();
         assert_eq!(error, UnmatchedBracket(2));
         let error = construct_pattern_from_str("[ab][cde").err().unwrap();
         assert_eq!(error, UnmatchedBracket(4))
+    }
+
+    #[test]
+    fn report_invalid_start_line_anchor() {
+        let error = construct_pattern_from_str("a^bcde").err().unwrap();
+        assert_eq!(error, InvalidStartLineAnchor(1));
+        let error = construct_pattern_from_str(" ^ab[cde").err().unwrap();
+        assert_eq!(error, InvalidStartLineAnchor(1));
+        let error = construct_pattern_from_str("[ab]^cde").err().unwrap();
+        assert_eq!(error, InvalidStartLineAnchor(4))
     }
 }
