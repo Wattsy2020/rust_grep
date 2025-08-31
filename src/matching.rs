@@ -1,7 +1,11 @@
 use crate::character_class::{alphanumeric, characters, digits, CharacterClass};
-use crate::matching::ParsePatternError::{InvalidStartLineAnchor, UnmatchedBracket};
+use crate::matching::ParsePatternError::{
+    InvalidEndLineAnchor, InvalidStartLineAnchor, UnmatchedBracket,
+};
 use crate::parse::split_at;
-use crate::pattern::{always_match, character, literal, start_line_anchor, Pattern};
+use crate::pattern::{
+    always_match, character, end_line_anchor, literal, start_line_anchor, Pattern,
+};
 use thiserror::Error;
 
 #[derive(Error, Debug, PartialEq, Clone)]
@@ -10,6 +14,10 @@ enum ParsePatternError {
         "Start line anchor must be at the start of the pattern, instead found it at col number {0}"
     )]
     InvalidStartLineAnchor(usize),
+    #[error(
+        "End line anchor must be at the end of the pattern, instead found it at col number {0}"
+    )]
+    InvalidEndLineAnchor(usize),
     #[error("Unmatched opening bracket at col number {0}")]
     UnmatchedBracket(usize),
 }
@@ -23,6 +31,10 @@ fn construct_pattern(
     char_idx: usize,
 ) -> Result<Box<dyn Pattern>, ParsePatternError> {
     match pattern_chars {
+        [remaining @ .., '$'] => Ok(Box::new(end_line_anchor(construct_pattern(
+            remaining, char_idx,
+        )?))),
+        ['$', ..] => Err(InvalidEndLineAnchor(char_idx)),
         ['^', remaining @ ..] => match char_idx {
             0 => Ok(Box::new(start_line_anchor(construct_pattern(
                 remaining,
@@ -63,7 +75,7 @@ pub fn match_pattern(input_line: &str, pattern: &str) -> bool {
         Err(error) => panic!("Invalid pattern: {error:?}"),
         Ok(pattern) => {
             let pattern_str = format!("{pattern:?}");
-            println!("{pattern_str}");
+            println!("Parsed pattern: {pattern_str}");
             pattern.matches(input_line)
         }
     }
@@ -154,23 +166,40 @@ mod tests {
     }
 
     #[test]
+    fn handle_end_line_anchor() {
+        assert!(match_pattern("dog", "dog$"));
+        assert!(match_pattern("one dog", "dog$"));
+        assert!(!match_pattern("dogs", "dog$"));
+        assert!(!match_pattern("two dogs", "dog$"));
+    }
+
+    #[test]
     fn report_unmatching_brackets() {
-        // todo: implement PartialEq, Eq for Pattern, so I can compare here
-        let error = construct_pattern_from_str("[abcde").err().unwrap();
-        assert_eq!(error, UnmatchedBracket(0));
-        let error = construct_pattern_from_str("ab[cde").err().unwrap();
-        assert_eq!(error, UnmatchedBracket(2));
-        let error = construct_pattern_from_str("[ab][cde").err().unwrap();
-        assert_eq!(error, UnmatchedBracket(4))
+        let error = construct_pattern_from_str("[abcde").err();
+        assert_eq!(error, Some(UnmatchedBracket(0)));
+        let error = construct_pattern_from_str("ab[cde").err();
+        assert_eq!(error, Some(UnmatchedBracket(2)));
+        let error = construct_pattern_from_str("[ab][cde").err();
+        assert_eq!(error, Some(UnmatchedBracket(4)));
     }
 
     #[test]
     fn report_invalid_start_line_anchor() {
-        let error = construct_pattern_from_str("a^bcde").err().unwrap();
-        assert_eq!(error, InvalidStartLineAnchor(1));
-        let error = construct_pattern_from_str(" ^ab[cde").err().unwrap();
-        assert_eq!(error, InvalidStartLineAnchor(1));
-        let error = construct_pattern_from_str("[ab]^cde").err().unwrap();
-        assert_eq!(error, InvalidStartLineAnchor(4))
+        let error = construct_pattern_from_str("a^bcde").err();
+        assert_eq!(error, Some(InvalidStartLineAnchor(1)));
+        let error = construct_pattern_from_str(" ^ab[cde").err();
+        assert_eq!(error, Some(InvalidStartLineAnchor(1)));
+        let error = construct_pattern_from_str("[ab]^cde").err();
+        assert_eq!(error, Some(InvalidStartLineAnchor(4)));
+    }
+
+    #[test]
+    fn report_invalid_end_line_anchor() {
+        let error = construct_pattern_from_str("abcd$e").err();
+        assert_eq!(error, Some(InvalidEndLineAnchor(4)));
+        let error = construct_pattern_from_str(" a$b[cde").err();
+        assert_eq!(error, Some(InvalidEndLineAnchor(2)));
+        let error = construct_pattern_from_str("[ab]c$de").err();
+        assert_eq!(error, Some(InvalidEndLineAnchor(5)));
     }
 }

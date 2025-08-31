@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct MatchIndices {
     /// Start index of the match (inclusive)
@@ -14,7 +16,7 @@ pub enum Match {
 
 impl Match {
     pub fn at(start: usize, end: usize) -> Match {
-        Match::Match(MatchIndices { start, end })
+        (MatchIndices { start, end }).into()
     }
 
     pub fn is_match(&self) -> bool {
@@ -35,5 +37,17 @@ impl Match {
 impl Default for Match {
     fn default() -> Self {
         Match::None
+    }
+}
+
+impl From<MatchIndices> for Match {
+    fn from(value: MatchIndices) -> Self {
+        Match::Match(value)
+    }
+}
+
+impl<T: Deref<Target = MatchIndices>> From<T> for Match {
+    fn from(value: T) -> Self {
+        Match::Match(value.clone())
     }
 }
