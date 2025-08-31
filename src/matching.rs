@@ -31,10 +31,6 @@ fn construct_pattern(
     char_idx: usize,
 ) -> Result<Box<dyn Pattern>, ParsePatternError> {
     match pattern_chars {
-        [remaining @ .., '$'] => Ok(Box::new(end_line_anchor(construct_pattern(
-            remaining, char_idx,
-        )?))),
-        ['$', ..] => Err(InvalidEndLineAnchor(char_idx)),
         ['^', remaining @ ..] => match char_idx {
             0 => Ok(Box::new(start_line_anchor(construct_pattern(
                 remaining,
@@ -42,6 +38,10 @@ fn construct_pattern(
             )?))),
             _ => Err(InvalidStartLineAnchor(char_idx)),
         },
+        [remaining @ .., '$'] => Ok(Box::new(end_line_anchor(construct_pattern(
+            remaining, char_idx,
+        )?))),
+        ['$', ..] => Err(InvalidEndLineAnchor(char_idx)),
         ['\\', char, remaining @ ..] => Ok((match char {
             'd' => from_character_class(digits()),
             'w' => from_character_class(alphanumeric()),
@@ -171,6 +171,12 @@ mod tests {
         assert!(match_pattern("one dog", "dog$"));
         assert!(!match_pattern("dogs", "dog$"));
         assert!(!match_pattern("two dogs", "dog$"));
+    }
+
+    #[test]
+    fn handle_start_and_end_anchors() {
+        assert!(match_pattern("dog", "^dog$"));
+        assert!(!match_pattern("dog dog", "^dog$"));
     }
 
     #[test]

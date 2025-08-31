@@ -7,13 +7,13 @@ struct StartLineAnchor {
 
 impl Pattern for StartLineAnchor {
     fn matches_exact(&self, chars: &[char]) -> Match {
-        self.inner_pattern.matches_exact(chars)
+        panic!("Start line pattern shouldn't be matched after any other pattern, it must always be the first pattern")
     }
 
     // ensure the pattern only matches from the start of the string
     // by overriding matches to only check from the start of the string
     fn matches(&self, string: &str) -> bool {
-        self.matches_exact_str(string).is_match()
+        self.inner_pattern.matches_exact_str(string).is_match()
     }
 }
 
