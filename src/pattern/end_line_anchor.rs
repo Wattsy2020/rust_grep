@@ -1,4 +1,4 @@
-use crate::pattern::{Match, Pattern};
+use crate::pattern::{ChainablePattern, Match, Pattern};
 
 #[derive(Debug)]
 struct EndLineAnchor {
@@ -19,16 +19,9 @@ impl Pattern for EndLineAnchor {
                 }
             })
     }
-
-    fn followed_by(self, _: Box<dyn Pattern>) -> Box<dyn Pattern>
-    where
-        Self: Sized + 'static,
-    {
-        panic!("End line anchor shouldn't be followed by any other pattern")
-    }
 }
 
-pub fn end_line_anchor(pattern: Box<dyn Pattern>) -> impl Pattern {
+pub fn end_line_anchor(pattern: Box<dyn ChainablePattern>) -> impl Pattern {
     EndLineAnchor {
         inner_pattern: pattern,
     }
@@ -37,7 +30,7 @@ pub fn end_line_anchor(pattern: Box<dyn Pattern>) -> impl Pattern {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::pattern::literal;
+    use crate::pattern::{literal, ChainablePattern};
 
     #[test]
     fn test_start_line_anchor() {

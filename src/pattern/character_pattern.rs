@@ -1,16 +1,16 @@
 use crate::character_class::CharacterClass;
-use crate::pattern::{Match, Pattern};
+use crate::pattern::{ChainablePattern, Match, Pattern};
 
 #[derive(Debug)]
 struct CharacterPattern {
     character_class: Box<dyn CharacterClass>,
 }
 
-pub fn character(character_class: Box<dyn CharacterClass>) -> impl Pattern {
+pub fn character(character_class: Box<dyn CharacterClass>) -> impl ChainablePattern {
     CharacterPattern { character_class }
 }
 
-pub fn literal(char: char) -> impl Pattern {
+pub fn literal(char: char) -> impl ChainablePattern {
     character(Box::new(crate::character_class::literal(char)))
 }
 
@@ -25,6 +25,8 @@ impl Pattern for CharacterPattern {
         }
     }
 }
+
+impl ChainablePattern for CharacterPattern {}
 
 #[cfg(test)]
 mod tests {

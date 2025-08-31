@@ -3,6 +3,7 @@ use std::fmt::Debug;
 pub trait CharacterClass: Debug {
     fn matches(&self, character: char) -> bool;
 
+    #[allow(dead_code)] // this could be useful for implementing other character classes
     fn union<T: CharacterClass>(self, other: T) -> UnionCharacterClass<Self, T>
     where
         Self: Sized,

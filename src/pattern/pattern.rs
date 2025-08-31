@@ -1,7 +1,6 @@
 use crate::pattern::union_pattern::union;
 use crate::pattern::Match;
 use std::fmt::Debug;
-use std::ops::Deref;
 
 pub trait Pattern: Debug {
     /// Whether the Pattern matches starting from the first character
@@ -18,9 +17,13 @@ pub trait Pattern: Debug {
         let chars: Box<[char]> = string.chars().collect();
         (0..chars.len()).any(|i| self.matches_exact(&chars[i..]).is_match())
     }
+}
 
+/// A pattern that can be followed by or preceded by another pattern
+/// Examples of Patterns that aren't chainable are the start and end line anchor patterns
+pub trait ChainablePattern: Pattern {
     /// Create a new pattern that matches when this pattern and the next pattern match consecutively
-    fn followed_by(self, pattern: Box<dyn Pattern>) -> Box<dyn Pattern>
+    fn followed_by(self, pattern: Box<dyn ChainablePattern>) -> Box<dyn ChainablePattern>
     where
         Self: Sized + 'static,
     {
@@ -30,18 +33,34 @@ pub trait Pattern: Debug {
 
 impl Pattern for Box<dyn Pattern> {
     fn matches_exact(&self, chars: &[char]) -> Match {
-        self.deref().matches_exact(chars)
+        (**self).matches_exact(chars)
     }
 
     fn matches_exact_str(&self, string: &str) -> Match {
-        self.deref().matches_exact_str(string)
+        (**self).matches_exact_str(string)
     }
 
     fn matches(&self, string: &str) -> bool {
-        self.deref().matches(string)
+        (**self).matches(string)
+    }
+}
+
+impl Pattern for Box<dyn ChainablePattern> {
+    fn matches_exact(&self, chars: &[char]) -> Match {
+        (**self).matches_exact(chars)
     }
 
-    fn followed_by(self, pattern: Box<dyn Pattern>) -> Box<dyn Pattern>
+    fn matches_exact_str(&self, string: &str) -> Match {
+        (**self).matches_exact_str(string)
+    }
+
+    fn matches(&self, string: &str) -> bool {
+        (**self).matches(string)
+    }
+}
+
+impl ChainablePattern for Box<dyn ChainablePattern> {
+    fn followed_by(self, pattern: Box<dyn ChainablePattern>) -> Box<dyn ChainablePattern>
     where
         Self: 'static,
     {

@@ -1,3 +1,4 @@
+use crate::pattern::ChainablePattern;
 use crate::pattern::{Match, Pattern};
 
 #[derive(Debug)]
@@ -6,7 +7,10 @@ struct UnionPattern {
     second: Box<dyn Pattern>,
 }
 
-pub fn union(first: Box<dyn Pattern>, second: Box<dyn Pattern>) -> impl Pattern {
+pub fn union(
+    first: Box<dyn ChainablePattern>,
+    second: Box<dyn ChainablePattern>,
+) -> impl ChainablePattern {
     UnionPattern { first, second }
 }
 
@@ -22,6 +26,8 @@ impl Pattern for UnionPattern {
         })
     }
 }
+
+impl ChainablePattern for UnionPattern {}
 
 #[cfg(test)]
 mod tests {

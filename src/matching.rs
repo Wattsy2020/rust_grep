@@ -4,7 +4,7 @@ use crate::matching::ParsePatternError::{
 };
 use crate::parse::split_at;
 use crate::pattern::{
-    always_match, character, end_line_anchor, literal, start_line_anchor, Pattern,
+    always_match, character, end_line_anchor, literal, start_line_anchor, ChainablePattern, Pattern,
 };
 use thiserror::Error;
 
@@ -22,25 +22,16 @@ enum ParsePatternError {
     UnmatchedBracket(usize),
 }
 
-fn from_character_class(class: impl CharacterClass + 'static) -> Box<dyn Pattern> {
+fn from_character_class(class: impl CharacterClass + 'static) -> Box<dyn ChainablePattern> {
     Box::new(character(Box::new(class)))
 }
 
 fn construct_pattern(
     pattern_chars: &[char],
     char_idx: usize,
-) -> Result<Box<dyn Pattern>, ParsePatternError> {
+) -> Result<Box<dyn ChainablePattern>, ParsePatternError> {
     match pattern_chars {
-        ['^', remaining @ ..] => match char_idx {
-            0 => Ok(Box::new(start_line_anchor(construct_pattern(
-                remaining,
-                char_idx + 1,
-            )?))),
-            _ => Err(InvalidStartLineAnchor(char_idx)),
-        },
-        [remaining @ .., '$'] => Ok(Box::new(end_line_anchor(construct_pattern(
-            remaining, char_idx,
-        )?))),
+        ['^', ..] => Err(InvalidStartLineAnchor(char_idx)),
         ['$', ..] => Err(InvalidEndLineAnchor(char_idx)),
         ['\\', char, remaining @ ..] => Ok((match char {
             'd' => from_character_class(digits()),
@@ -65,9 +56,29 @@ fn construct_pattern(
     }
 }
 
+// Handle start and end line anchors in the pattern
+// This is a separate function because start and end line anchors don't implement ChainablePattern
+// and construct_pattern needs to return ChainablePattern for its recursion to work
+fn construct_pattern_with_anchors(
+    pattern_chars: &[char],
+    char_idx: usize,
+) -> Result<Box<dyn Pattern>, ParsePatternError> {
+    match pattern_chars {
+        ['^', remaining @ ..] => Ok(Box::new(start_line_anchor(construct_pattern_with_anchors(
+            remaining,
+            char_idx + 1,
+        )?))),
+        [remaining @ .., '$'] => Ok(Box::new(end_line_anchor(construct_pattern(
+            remaining, char_idx,
+        )?))),
+        ['$', ..] => Err(InvalidEndLineAnchor(char_idx)),
+        _ => construct_pattern(pattern_chars, char_idx).map(|p| p as Box<dyn Pattern>),
+    }
+}
+
 fn construct_pattern_from_str(pattern: &str) -> Result<Box<dyn Pattern>, ParsePatternError> {
     let pattern_chars: Box<[char]> = pattern.chars().collect();
-    construct_pattern(&pattern_chars, 0)
+    construct_pattern_with_anchors(&pattern_chars, 0)
 }
 
 pub fn match_pattern(input_line: &str, pattern: &str) -> bool {

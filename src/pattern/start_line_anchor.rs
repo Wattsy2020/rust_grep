@@ -6,7 +6,7 @@ struct StartLineAnchor {
 }
 
 impl Pattern for StartLineAnchor {
-    fn matches_exact(&self, chars: &[char]) -> Match {
+    fn matches_exact(&self, _chars: &[char]) -> Match {
         panic!("Start line pattern shouldn't be matched after any other pattern, it must always be the first pattern")
     }
 

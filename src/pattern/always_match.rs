@@ -1,4 +1,4 @@
-use crate::pattern::{Match, Pattern};
+use crate::pattern::{ChainablePattern, Match, Pattern};
 
 #[derive(Debug)]
 struct AlwaysMatch {}
@@ -9,7 +9,9 @@ impl Pattern for AlwaysMatch {
     }
 }
 
-pub fn always_match() -> impl Pattern {
+impl ChainablePattern for AlwaysMatch {}
+
+pub fn always_match() -> impl ChainablePattern {
     AlwaysMatch {}
 }
 
