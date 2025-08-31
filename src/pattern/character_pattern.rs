@@ -1,5 +1,5 @@
 use crate::character_class::CharacterClass;
-use crate::pattern::{ChainablePattern, Match, Pattern};
+use crate::pattern::{always_match, ChainablePattern, Match, Pattern};
 
 #[derive(Debug)]
 struct CharacterPattern {
@@ -12,6 +12,16 @@ pub fn character(character_class: Box<dyn CharacterClass>) -> impl ChainablePatt
 
 pub fn literal(char: char) -> impl ChainablePattern {
     character(Box::new(crate::character_class::literal(char)))
+}
+
+#[allow(dead_code)] // this is useful for tests
+pub fn literal_str(string: &str) -> Box<dyn ChainablePattern> {
+    let chars: Box<[char]> = string.chars().collect();
+    chars
+        .iter()
+        .fold(Box::new(always_match()), |pattern, char| {
+            pattern.followed_by(Box::new(literal(*char)))
+        })
 }
 
 impl Pattern for CharacterPattern {

@@ -1,3 +1,4 @@
+use crate::pattern::match_struct::combine_match;
 use crate::pattern::ChainablePattern;
 use crate::pattern::{Match, Pattern};
 
@@ -19,10 +20,7 @@ impl Pattern for UnionPattern {
         self.first.matches_exact(chars).and_then(|first_match| {
             self.second
                 .matches_exact(&chars[first_match.end..])
-                .and_then(|second_match|
-                    // because the second.matches_exact sees the string starting at first_end
-                    // the actual ending idx in the original string is first_end + second_end
-                    Match::at(first_match.start, first_match.end + second_match.end))
+                .and_then(|second_match| combine_match(first_match, second_match))
         })
     }
 }

@@ -4,7 +4,8 @@ use crate::matching::ParsePatternError::{
 };
 use crate::parse::split_at;
 use crate::pattern::{
-    always_match, character, end_line_anchor, literal, start_line_anchor, ChainablePattern, Pattern,
+    always_match, character, end_line_anchor, literal, one_or_more, start_line_anchor,
+    ChainablePattern, Pattern,
 };
 use thiserror::Error;
 
@@ -26,6 +27,20 @@ fn from_character_class(class: impl CharacterClass + 'static) -> Box<dyn Chainab
     Box::new(character(Box::new(class)))
 }
 
+/// Add modifiers such as + to the current pattern, then parse the remaining pattern using construct_pattern
+fn parse_modifiers(
+    pattern: Box<dyn ChainablePattern>,
+    pattern_chars: &[char],
+    char_idx: usize,
+) -> Result<Box<dyn ChainablePattern>, ParsePatternError> {
+    match pattern_chars {
+        ['+', remaining @ ..] => {
+            Ok(one_or_more(pattern).followed_by(construct_pattern(remaining, char_idx + 1)?))
+        }
+        _ => Ok(pattern.followed_by(construct_pattern(pattern_chars, char_idx)?)),
+    }
+}
+
 fn construct_pattern(
     pattern_chars: &[char],
     char_idx: usize,
@@ -33,24 +48,30 @@ fn construct_pattern(
     match pattern_chars {
         ['^', ..] => Err(InvalidStartLineAnchor(char_idx)),
         ['$', ..] => Err(InvalidEndLineAnchor(char_idx)),
-        ['\\', char, remaining @ ..] => Ok((match char {
-            'd' => from_character_class(digits()),
-            'w' => from_character_class(alphanumeric()),
-            // if escape isn't followed by an escaped character, assume it is a literal escape
-            _ => literal('\\').followed_by(Box::new(literal(*char))),
-        })
-        .followed_by(construct_pattern(remaining, char_idx + 2)?)),
+        ['\\', char, remaining @ ..] => parse_modifiers(
+            match char {
+                'd' => from_character_class(digits()),
+                'w' => from_character_class(alphanumeric()),
+                // if escape isn't followed by an escaped character, assume it is a literal escape
+                _ => literal('\\').followed_by(Box::new(literal(*char))),
+            },
+            remaining,
+            char_idx + 2,
+        ),
         // we match starting from the '[' part, and then manually check for the first closing ']'
         ['[', remaining @ ..] => match split_at(remaining, ']') {
             None => Err(UnmatchedBracket(char_idx)),
-            Some((chars, remaining)) => Ok((match chars {
-                ['^', chars @ ..] => from_character_class(characters(chars).negate()),
-                _ => from_character_class(characters(chars)),
-            })
-            .followed_by(construct_pattern(remaining, char_idx + chars.len() + 2)?)),
+            Some((chars, remaining)) => parse_modifiers(
+                match chars {
+                    ['^', chars @ ..] => from_character_class(characters(chars).negate()),
+                    _ => from_character_class(characters(chars)),
+                },
+                remaining,
+                char_idx + chars.len() + 2,
+            ),
         },
         [char, remaining @ ..] => {
-            Ok(literal(*char).followed_by(construct_pattern(remaining, char_idx + 1)?))
+            parse_modifiers(Box::new(literal(*char)), remaining, char_idx + 1)
         }
         [] => Ok(Box::new(always_match())), // an empty pattern matches anything
     }
@@ -161,6 +182,35 @@ mod tests {
         assert!(!match_pattern("da", "[abc][def]"));
         assert!(match_pattern("a 1z d", "[abc] \\d\\w [def]"));
         assert!(!match_pattern("a 1z g", "[abc] \\d\\w [def]"));
+    }
+
+    #[test]
+    fn match_one_or_more_pattern() {
+        assert!(match_pattern("a", "a+"));
+        assert!(match_pattern("aaaaa", "a+"));
+        assert!(match_pattern("aaaaab", "a+"));
+        assert!(match_pattern("bab", "a+"));
+        assert!(match_pattern("aaab", "a+b"));
+        assert!(match_pattern("aaab", "a+ab"));
+    }
+
+    #[test]
+    fn match_multiple_one_or_more_patterns() {
+        assert!(!match_pattern("a", "a+a+"));
+        assert!(match_pattern("aa", "a+a+"));
+        assert!(match_pattern("aaa", "a+a+"));
+        assert!(match_pattern("abcdaab", "a+a+"));
+        assert!(match_pattern("aaa", "a+a+a+"));
+        assert!(match_pattern("aaaa", "a+a+a+"));
+    }
+
+    #[test]
+    fn match_complex_one_or_more_pattern() {
+        assert!(match_pattern("bababa", "[ab]+"));
+        assert!(match_pattern("b", "[ab]+"));
+        assert!(match_pattern("ba", "[ab]+"));
+        assert!(match_pattern("bab", "[ab]+ab"));
+        assert!(match_pattern("aab", "[ab]+ab"));
     }
 
     #[test]

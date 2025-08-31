@@ -30,11 +30,11 @@ pub fn end_line_anchor(pattern: Box<dyn ChainablePattern>) -> impl Pattern {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::pattern::{literal, ChainablePattern};
+    use crate::pattern::character_pattern::literal_str;
 
     #[test]
     fn test_start_line_anchor() {
-        let pattern = end_line_anchor(literal('a').followed_by(Box::new(literal('b'))));
+        let pattern = end_line_anchor(literal_str("ab"));
         assert!(pattern.matches("cab"));
         assert!(pattern.matches("ab"));
         assert!(!pattern.matches("abc"));

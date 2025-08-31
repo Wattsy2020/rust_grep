@@ -1,5 +1,5 @@
 use crate::pattern::union_pattern::union;
-use crate::pattern::Match;
+use crate::pattern::{always_match, Match};
 use std::fmt::Debug;
 
 pub trait Pattern: Debug {
@@ -65,6 +65,18 @@ impl ChainablePattern for Box<dyn ChainablePattern> {
         Self: 'static,
     {
         Box::new(union(self, pattern))
+    }
+}
+
+impl Default for Box<dyn Pattern> {
+    fn default() -> Self {
+        Box::new(always_match())
+    }
+}
+
+impl Default for Box<dyn ChainablePattern> {
+    fn default() -> Self {
+        Box::new(always_match())
     }
 }
 

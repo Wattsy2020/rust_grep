@@ -51,3 +51,10 @@ impl<T: Deref<Target = MatchIndices>> From<T> for Match {
         Match::Match(value.clone())
     }
 }
+
+/// Combine two matches, only used by the pattern module as it makes assumptions about how the matches are made
+pub fn combine_match(first_match: &MatchIndices, second_match: &MatchIndices) -> Match {
+    // because the second.matches_exact sees the string starting at first_end
+    // the actual ending idx in the original string is first_end + second_end
+    Match::at(first_match.start, first_match.end + second_match.end)
+}
