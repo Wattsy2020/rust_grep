@@ -4,7 +4,7 @@ use crate::matching::ParsePatternError::{
 };
 use crate::parse::split_at;
 use crate::pattern::{
-    always_match, character, end_line_anchor, literal, one_or_more, start_line_anchor,
+    always_match, character, end_line_anchor, literal, one_or_more, start_line_anchor, zero_or_one,
     ChainablePattern, Pattern,
 };
 use thiserror::Error;
@@ -36,6 +36,9 @@ fn parse_modifiers(
     match pattern_chars {
         ['+', remaining @ ..] => {
             Ok(one_or_more(pattern).followed_by(construct_pattern(remaining, char_idx + 1)?))
+        }
+        ['?', remaining @ ..] => {
+            Ok(zero_or_one(pattern).followed_by(construct_pattern(remaining, char_idx + 1)?))
         }
         _ => Ok(pattern.followed_by(construct_pattern(pattern_chars, char_idx)?)),
     }
@@ -125,6 +128,11 @@ mod tests {
     }
 
     #[test]
+    fn match_empty() {
+        assert!(match_pattern("", ""));
+    }
+
+    #[test]
     fn match_digit() {
         assert!(match_pattern("1", "\\d"));
         assert!(match_pattern("hell1o", "\\d"));
@@ -211,6 +219,35 @@ mod tests {
         assert!(match_pattern("ba", "[ab]+"));
         assert!(match_pattern("bab", "[ab]+ab"));
         assert!(match_pattern("aab", "[ab]+ab"));
+    }
+
+    #[test]
+    fn test_zero_or_one_pattern() {
+        assert!(match_pattern("", "a?"));
+        assert!(match_pattern("a", "a?"));
+        assert!(match_pattern("aa", "a?"));
+        assert!(match_pattern("b", "a?"));
+    }
+
+    #[test]
+    fn test_complex_zero_or_one_pattern() {
+        assert!(!match_pattern("bd", "[bc]?cd"));
+        assert!(match_pattern("cd", "[bc]?cd"));
+        assert!(match_pattern("bcd", "[bc]?cd"));
+    }
+
+    #[test]
+    fn test_chaining_zero_or_one_patterns() {
+        assert!(!match_pattern("ac", "ab?bc"));
+        assert!(match_pattern("abc", "ab?bc"));
+        assert!(match_pattern("abbc", "ab?bc"));
+        assert!(!match_pattern("abbbc", "ab?bc"));
+
+        assert!(!match_pattern("ac", "ab?b?bc"));
+        assert!(match_pattern("abc", "ab?b?bc"));
+        assert!(match_pattern("abbc", "ab?b?bc"));
+        assert!(match_pattern("abbbc", "ab?b?bc"));
+        assert!(!match_pattern("abbbbc", "ab?b?bc"));
     }
 
     #[test]

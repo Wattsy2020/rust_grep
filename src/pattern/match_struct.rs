@@ -32,6 +32,13 @@ impl Match {
             Match::Match(indices) => f(indices),
         }
     }
+    
+    pub fn match_or(self, default: Match) -> Match {
+        match self {
+            Match::None => default,
+            _ => self
+        }
+    }
 }
 
 impl Default for Match {

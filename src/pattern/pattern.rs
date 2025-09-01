@@ -15,7 +15,9 @@ pub trait Pattern: Debug {
     /// Whether the Pattern matches starting from any character in the string
     fn matches(&self, string: &str) -> bool {
         let chars: Box<[char]> = string.chars().collect();
-        (0..chars.len()).any(|i| self.matches_exact(&chars[i..]).is_match())
+        // use =chars.len() so that when the string has zero length it will still check if the pattern matches
+        // a pattern like "a?" can match an empty string
+        (0..=chars.len()).any(|i| self.matches_exact(&chars[i..]).is_match())
     }
 }
 
