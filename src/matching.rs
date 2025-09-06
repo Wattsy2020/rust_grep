@@ -2,10 +2,7 @@ use crate::matching::ParsePatternError::{
     InvalidEndLineAnchor, InvalidStartLineAnchor, UnmatchedBracket,
 };
 use crate::parse::split_at;
-use crate::pattern::{
-    alphanumeric, always_match, digits, end_line_anchor, literal, one_or_more, start_line_anchor,
-    union, zero_or_one, ChainablePattern, Pattern,
-};
+use crate::pattern::{alphanumeric, always_match, digits, end_line_anchor, literal, one_or_more, start_line_anchor, union, whitespace, zero_or_one, ChainablePattern, Pattern};
 use thiserror::Error;
 
 #[derive(Error, Debug, PartialEq, Clone)]
@@ -50,6 +47,7 @@ fn construct_pattern(
             match char {
                 'd' => Box::new(digits()),
                 'w' => Box::new(alphanumeric()),
+                's' => Box::new(whitespace()),
                 // if escape isn't followed by an escaped character, assume it is a literal escape
                 _ => literal('\\').followed_by(Box::new(literal(*char))),
             },
@@ -142,6 +140,14 @@ mod tests {
         assert!(match_pattern("_", "\\w"));
         assert!(!match_pattern("[]/.,", "\\w"));
     }
+    
+    #[test]
+    fn match_whitespace() {
+        assert!(match_pattern(" ", "\\s"));
+        assert!(match_pattern("abcd e", "\\s"));
+        assert!(match_pattern("\t", "\\s"));
+        assert!(match_pattern("\n", "\\s"));
+    }
 
     #[test]
     fn match_character_groups() {
@@ -190,6 +196,11 @@ mod tests {
         assert!(match_pattern("2x", "[b\\d]x"));
         assert!(match_pattern("bx", "[b\\d]x"));
         assert!(!match_pattern("ax", "[b\\d]x"));
+
+        assert!(match_pattern("9x", "[\\s\\d]x"));
+        assert!(match_pattern(" x", "[\\s\\d]x"));
+        assert!(match_pattern("\nx", "[\\s\\d]x"));
+        assert!(!match_pattern("ax", "[\\s\\d]x"));
     }
 
     #[test]

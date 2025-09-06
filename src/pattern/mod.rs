@@ -9,7 +9,7 @@ mod union_pattern;
 mod zero_or_one;
 
 pub use always_match::always_match;
-pub use character_pattern::{alphanumeric, digits, literal, union};
+pub use character_pattern::{alphanumeric, digits, literal, union, whitespace};
 pub use end_line_anchor::end_line_anchor;
 pub use match_struct::Match;
 pub use one_or_more::one_or_more;
