@@ -1,11 +1,10 @@
-use crate::character_class::{alphanumeric, characters, digits, CharacterClass};
 use crate::matching::ParsePatternError::{
     InvalidEndLineAnchor, InvalidStartLineAnchor, UnmatchedBracket,
 };
 use crate::parse::split_at;
 use crate::pattern::{
-    always_match, character, end_line_anchor, literal, one_or_more, start_line_anchor, zero_or_one,
-    ChainablePattern, Pattern,
+    alphanumeric, always_match, digits, end_line_anchor, literal, one_or_more, start_line_anchor,
+    union, zero_or_one, ChainablePattern, Pattern,
 };
 use thiserror::Error;
 
@@ -21,10 +20,6 @@ enum ParsePatternError {
     InvalidEndLineAnchor(usize),
     #[error("Unmatched opening bracket at col number {0}")]
     UnmatchedBracket(usize),
-}
-
-fn from_character_class(class: impl CharacterClass + 'static) -> Box<dyn ChainablePattern> {
-    Box::new(character(Box::new(class)))
 }
 
 /// Add modifiers such as + to the current pattern, then parse the remaining pattern using construct_pattern
@@ -53,8 +48,8 @@ fn construct_pattern(
         ['$', ..] => Err(InvalidEndLineAnchor(char_idx)),
         ['\\', char, remaining @ ..] => parse_modifiers(
             match char {
-                'd' => from_character_class(digits()),
-                'w' => from_character_class(alphanumeric()),
+                'd' => Box::new(digits()),
+                'w' => Box::new(alphanumeric()),
                 // if escape isn't followed by an escaped character, assume it is a literal escape
                 _ => literal('\\').followed_by(Box::new(literal(*char))),
             },
@@ -65,10 +60,7 @@ fn construct_pattern(
         ['[', remaining @ ..] => match split_at(remaining, ']') {
             None => Err(UnmatchedBracket(char_idx)),
             Some((chars, remaining)) => parse_modifiers(
-                match chars {
-                    ['^', chars @ ..] => from_character_class(characters(chars).negate()),
-                    _ => from_character_class(characters(chars)),
-                },
+                Box::new(union(chars)),
                 remaining,
                 char_idx + chars.len() + 2,
             ),
@@ -190,6 +182,14 @@ mod tests {
         assert!(!match_pattern("da", "[abc][def]"));
         assert!(match_pattern("a 1z d", "[abc] \\d\\w [def]"));
         assert!(!match_pattern("a 1z g", "[abc] \\d\\w [def]"));
+    }
+
+    #[test]
+    fn match_complex_character_groups() {
+        assert!(match_pattern("9x", "[b\\d]x"));
+        assert!(match_pattern("2x", "[b\\d]x"));
+        assert!(match_pattern("bx", "[b\\d]x"));
+        assert!(!match_pattern("ax", "[b\\d]x"));
     }
 
     #[test]

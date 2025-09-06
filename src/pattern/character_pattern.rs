@@ -1,3 +1,4 @@
+use crate::character_class;
 use crate::character_class::CharacterClass;
 use crate::pattern::{always_match, ChainablePattern, Match, Pattern};
 
@@ -6,12 +7,50 @@ struct CharacterPattern {
     character_class: Box<dyn CharacterClass>,
 }
 
-pub fn character(character_class: Box<dyn CharacterClass>) -> impl ChainablePattern {
+pub fn literal(char: char) -> impl ChainablePattern {
+    character(Box::new(character_class::literal(char)))
+}
+
+pub fn digits() -> impl ChainablePattern {
+    character(Box::new(character_class::digits()))
+}
+
+pub fn alphanumeric() -> impl ChainablePattern {
+    character(Box::new(character_class::alphanumeric()))
+}
+
+fn character(character_class: Box<dyn CharacterClass>) -> impl ChainablePattern {
     CharacterPattern { character_class }
 }
 
-pub fn literal(char: char) -> impl ChainablePattern {
-    character(Box::new(crate::character_class::literal(char)))
+/// Parse a character group pattern that supports matching any single character listed
+/// Chars must not be empty
+pub fn union(chars: &[char]) -> impl ChainablePattern {
+    character(match chars {
+        ['^', chars @ ..] => Box::new(parse_character_group_pattern(chars).expect("chars must not be empty").negate()),
+        _ => Box::new(parse_character_group_pattern(chars).expect("chars must not be empty")),
+    })
+}
+
+fn parse_character_group_pattern(chars: &[char]) -> Option<Box<dyn CharacterClass>> {
+    let (pattern, remaining) = match chars {
+        ['\\', char, remaining @ ..] => 
+            (match char {
+                'd' => Box::new(character_class::digits()) as Box<dyn CharacterClass>,
+                'w' => Box::new(character_class::alphanumeric()) as Box<dyn CharacterClass>,
+                // if escape isn't followed by an escaped character, assume it is a literal escape
+                _ => {
+                    Box::new(character_class::literal('\\').union(character_class::literal(*char)))
+                        as Box<dyn CharacterClass>
+                }
+            }, remaining),
+        [char, remaining @ ..] => (Box::new(character_class::literal(*char)) as Box<dyn CharacterClass>, remaining),
+        [] => None?,
+    };
+    match parse_character_group_pattern(remaining) {
+        None => Some(pattern),
+        Some(other_character_class) => Some(Box::new(pattern.union(other_character_class)))
+    }
 }
 
 #[allow(dead_code)] // this is useful for tests
