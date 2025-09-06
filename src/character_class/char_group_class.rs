@@ -81,12 +81,6 @@ pub fn alphanumeric() -> CharacterGroupClassBoxed {
         .union(DIGITS.into())
 }
 
-pub fn characters(chars: &[char]) -> CharacterGroupClassBoxed {
-    CharacterGroupClassBoxed {
-        valid_chars: chars.into(),
-    }
-}
-
 const DIGITS: CharacterGroupClass<10> = CharacterGroupClass {
     valid_chars: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'],
 };
