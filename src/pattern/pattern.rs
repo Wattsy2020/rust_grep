@@ -1,4 +1,3 @@
-use crate::pattern::union_pattern::union;
 use crate::pattern::{always_match, Match};
 use std::fmt::Debug;
 
@@ -21,15 +20,28 @@ pub trait Pattern: Debug {
     }
 }
 
+/// This is defined so that Box<dyn ChainablePattern> can call the underlying <dyn ChainablePattern>::followed_by method
+/// Follows this pattern https://quinedot.github.io/rust-learning/dyn-trait-box-impl.html
+pub trait ChainablePatternBoxed {
+    fn followed_by_boxed(
+        self: Box<Self>,
+        pattern: Box<dyn ChainablePattern>,
+    ) -> Box<dyn ChainablePattern>;
+}
+
 /// A pattern that can be followed by or preceded by another pattern
 /// Examples of Patterns that aren't chainable are the start and end line anchor patterns
-pub trait ChainablePattern: Pattern {
+pub trait ChainablePattern: Pattern + ChainablePatternBoxed {
     /// Create a new pattern that matches when this pattern and the next pattern match consecutively
-    fn followed_by(self, pattern: Box<dyn ChainablePattern>) -> Box<dyn ChainablePattern>
-    where
-        Self: Sized + 'static,
-    {
-        Box::new(union(Box::new(self), pattern))
+    fn followed_by(self, pattern: Box<dyn ChainablePattern>) -> Box<dyn ChainablePattern>;
+}
+
+impl<T: ChainablePattern> ChainablePatternBoxed for T {
+    fn followed_by_boxed(
+        self: Box<Self>,
+        pattern: Box<dyn ChainablePattern>,
+    ) -> Box<dyn ChainablePattern> {
+        (*self).followed_by(pattern)
     }
 }
 
@@ -62,11 +74,8 @@ impl Pattern for Box<dyn ChainablePattern> {
 }
 
 impl ChainablePattern for Box<dyn ChainablePattern> {
-    fn followed_by(self, pattern: Box<dyn ChainablePattern>) -> Box<dyn ChainablePattern>
-    where
-        Self: 'static,
-    {
-        Box::new(union(self, pattern))
+    fn followed_by(self, pattern: Box<dyn ChainablePattern>) -> Box<dyn ChainablePattern> {
+        self.followed_by_boxed(pattern)
     }
 }
 

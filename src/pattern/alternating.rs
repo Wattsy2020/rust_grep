@@ -1,5 +1,6 @@
 use crate::pattern::match_struct::combine_match;
 use crate::pattern::{ChainablePattern, Match, Pattern};
+use crate::pattern::union_pattern::union;
 
 #[derive(Debug)]
 struct AlternatingPattern {
@@ -66,4 +67,8 @@ impl Pattern for AlternatingPatternFollowedBy {
     }
 }
 
-impl ChainablePattern for AlternatingPatternFollowedBy {}
+impl ChainablePattern for AlternatingPatternFollowedBy {
+    fn followed_by(self, pattern: Box<dyn ChainablePattern>) -> Box<dyn ChainablePattern> {
+        union(self, pattern)
+    }
+}

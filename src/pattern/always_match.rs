@@ -1,4 +1,5 @@
 use crate::pattern::{ChainablePattern, Match, Pattern};
+use crate::pattern::union_pattern::union;
 
 #[derive(Debug)]
 struct AlwaysMatch {}
@@ -9,7 +10,11 @@ impl Pattern for AlwaysMatch {
     }
 }
 
-impl ChainablePattern for AlwaysMatch {}
+impl ChainablePattern for AlwaysMatch {
+    fn followed_by(self, pattern: Box<dyn ChainablePattern>) -> Box<dyn ChainablePattern> {
+        union(self, pattern)
+    }
+}
 
 pub fn always_match() -> impl ChainablePattern {
     AlwaysMatch {}

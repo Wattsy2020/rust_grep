@@ -8,11 +8,11 @@ struct UnionPattern {
     second: Box<dyn Pattern>,
 }
 
-pub fn union(
-    first: Box<dyn ChainablePattern>,
+pub fn union<T: ChainablePattern + Sized + 'static>(
+    first: T,
     second: Box<dyn ChainablePattern>,
-) -> impl ChainablePattern {
-    UnionPattern { first, second }
+) -> Box<dyn ChainablePattern> {
+    Box::new(UnionPattern { first: Box::new(first), second })
 }
 
 impl Pattern for UnionPattern {
@@ -25,7 +25,11 @@ impl Pattern for UnionPattern {
     }
 }
 
-impl ChainablePattern for UnionPattern {}
+impl ChainablePattern for UnionPattern {
+    fn followed_by(self, pattern: Box<dyn ChainablePattern>) -> Box<dyn ChainablePattern> {
+        union(self, pattern)
+    }
+}
 
 #[cfg(test)]
 mod tests {

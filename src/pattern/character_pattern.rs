@@ -1,6 +1,6 @@
 use crate::character_class;
 use crate::character_class::CharacterClass;
-use crate::pattern::{always_match, ChainablePattern, Match, Pattern};
+use crate::pattern::{always_match, union_pattern, ChainablePattern, Match, Pattern};
 
 #[derive(Debug)]
 struct CharacterPattern {
@@ -89,7 +89,11 @@ impl Pattern for CharacterPattern {
     }
 }
 
-impl ChainablePattern for CharacterPattern {}
+impl ChainablePattern for CharacterPattern {
+    fn followed_by(self, pattern: Box<dyn ChainablePattern>) -> Box<dyn ChainablePattern> {
+        union_pattern::union(self, pattern)
+    }
+}
 
 #[cfg(test)]
 mod tests {

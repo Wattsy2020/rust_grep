@@ -1,5 +1,6 @@
 use crate::pattern::match_struct::combine_match;
 use crate::pattern::{ChainablePattern, Match, Pattern};
+use crate::pattern::union_pattern::union;
 
 #[derive(Debug)]
 struct ZeroOrOnePattern {
@@ -46,7 +47,11 @@ impl Pattern for ZeroOrOneFollowedByPattern {
     }
 }
 
-impl ChainablePattern for ZeroOrOneFollowedByPattern {}
+impl ChainablePattern for ZeroOrOneFollowedByPattern {
+    fn followed_by(self, pattern: Box<dyn ChainablePattern>) -> Box<dyn ChainablePattern> {
+        union(self, pattern)
+    }
+}
 
 pub fn zero_or_one(pattern: Box<dyn ChainablePattern>) -> impl ChainablePattern {
     ZeroOrOnePattern {
