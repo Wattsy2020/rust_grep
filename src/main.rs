@@ -8,7 +8,7 @@ use std::env;
 use std::io;
 use std::process;
 
-// Usage: echo <input_text> | your_program.sh -E <pattern>
+// Usage: echo <input_text> | run.sh -E <pattern>
 fn main() {
     // You can use print statements as follows for debugging, they'll be visible when running tests.
     eprintln!("Logs from your program will appear here!");
@@ -24,8 +24,10 @@ fn main() {
     io::stdin().read_line(&mut input_line).unwrap();
 
     if match_pattern(&input_line, &pattern) {
+        println!("Matched");
         process::exit(0)
     } else {
+        println!("No Match");
         process::exit(1)
     }
 }

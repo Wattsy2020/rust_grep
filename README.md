@@ -2,3 +2,5 @@
 
 Implementation of grep in rust through the
 CodeCrafters ["Build Your Own grep" Challenge](https://app.codecrafters.io/courses/grep/overview).
+
+Usage: `echo "text" | ./run.sh -E "\w+x"`
