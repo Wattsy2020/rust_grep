@@ -3,8 +3,8 @@ use crate::matching::ParsePatternError::{
 };
 use crate::parse::split_at;
 use crate::pattern::{
-    alphanumeric, always_match, digits, end_line_anchor, literal, one_or_more, start_line_anchor,
-    union, whitespace, wildcard, zero_or_one, ChainablePattern, Pattern,
+    alphanumeric, alternating, always_match, digits, end_line_anchor, literal, one_or_more,
+    start_line_anchor, union, whitespace, wildcard, zero_or_one, ChainablePattern, Pattern,
 };
 use thiserror::Error;
 
@@ -58,6 +58,24 @@ fn construct_pattern(
             remaining,
             char_idx + 2,
         ),
+        ['(', remaining @ ..] => match split_at(remaining, ')') {
+            None => Err(UnmatchedBracket(char_idx)),
+            Some((chars, remaining)) => match split_at(chars, '|') {
+                None => parse_modifiers(
+                    construct_pattern(chars, char_idx + 1)?,
+                    remaining,
+                    char_idx + chars.len() + 2,
+                ),
+                Some((first_pattern, second_pattern)) => parse_modifiers(
+                    Box::new(alternating(
+                        construct_pattern(first_pattern, char_idx + 1)?,
+                        construct_pattern(second_pattern, char_idx + 2 + first_pattern.len())?,
+                    )),
+                    remaining,
+                    char_idx + chars.len() + 3,
+                ),
+            },
+        },
         // we match starting from the '[' part, and then manually check for the first closing ']'
         ['[', remaining @ ..] => match split_at(remaining, ']') {
             None => Err(UnmatchedBracket(char_idx)),
@@ -281,6 +299,22 @@ mod tests {
     }
 
     #[test]
+    fn test_alternating_patterns() {
+        assert!(match_pattern("dog", "(dog|cats)"));
+        assert!(match_pattern("cats", "(dog|cats)"));
+        assert!(match_pattern("dogs", "(dog|cats)s"));
+        assert!(match_pattern("aa", "(aa|a)a"));
+        assert!(match_pattern("aaa", "(aa|a)a"));
+        assert!(!match_pattern("a", "(aa|a)a"));
+
+        // ensures that our engine knows to select the second "aa" option,
+        // even though selecting "a" allows the next "a" pattern to match (but not the "c" pattern)
+        assert!(match_pattern("aaac", "(a|aa)ac"));
+        
+        // todo: test combination with + and ?
+    }
+
+    #[test]
     fn handle_unicode() {
         assert!(match_pattern("#-×_=%-", "\\w"));
         assert!(!match_pattern("%=#÷+×", "\\w"));
@@ -309,12 +343,23 @@ mod tests {
 
     #[test]
     fn report_unmatching_brackets() {
-        let error = construct_pattern_from_str("[abcde").err();
-        assert_eq!(error, Some(UnmatchedBracket(0)));
-        let error = construct_pattern_from_str("ab[cde").err();
-        assert_eq!(error, Some(UnmatchedBracket(2)));
-        let error = construct_pattern_from_str("[ab][cde").err();
-        assert_eq!(error, Some(UnmatchedBracket(4)));
+        assert_unmatched_bracket_at("[abcde", 0);
+        assert_unmatched_bracket_at("ab[cde", 2);
+        assert_unmatched_bracket_at("[ab][cde", 4);
+
+        assert_unmatched_bracket_at("(abcde", 0);
+        assert_unmatched_bracket_at("ab(cde", 2);
+        assert_unmatched_bracket_at("(ab)(cde", 4);
+        assert_unmatched_bracket_at("(ab)[cde", 4);
+
+        fn assert_unmatched_bracket_at(pattern: &str, unmatched_bracket_idx: usize) {
+            assert_eq!(
+                construct_pattern_from_str(pattern).err(),
+                Some(UnmatchedBracket(unmatched_bracket_idx)),
+                "Failed for pattern: {}",
+                pattern
+            );
+        }
     }
 
     #[test]

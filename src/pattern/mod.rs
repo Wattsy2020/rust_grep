@@ -1,3 +1,4 @@
+mod alternating;
 mod always_match;
 mod character_pattern;
 mod end_line_anchor;
@@ -9,6 +10,7 @@ mod union_pattern;
 mod wildcard;
 mod zero_or_one;
 
+pub use alternating::alternating;
 pub use always_match::always_match;
 pub use character_pattern::{alphanumeric, digits, literal, union, whitespace};
 pub use end_line_anchor::end_line_anchor;

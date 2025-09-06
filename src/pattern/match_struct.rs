@@ -26,17 +26,19 @@ impl Match {
         }
     }
 
+    /// If there is a match, call `f` with that match to produce a new match
     pub fn and_then<F: FnOnce(&MatchIndices) -> Match>(&self, f: F) -> Match {
         match self {
             Match::None => Match::None,
             Match::Match(indices) => f(indices),
         }
     }
-    
+
+    /// Return the match if there is one, or else the provided `default`
     pub fn match_or(self, default: Match) -> Match {
         match self {
             Match::None => default,
-            _ => self
+            _ => self,
         }
     }
 }
