@@ -2,7 +2,10 @@ use crate::matching::ParsePatternError::{
     InvalidEndLineAnchor, InvalidStartLineAnchor, UnmatchedBracket,
 };
 use crate::parse::split_at;
-use crate::pattern::{alphanumeric, always_match, digits, end_line_anchor, literal, one_or_more, start_line_anchor, union, whitespace, zero_or_one, ChainablePattern, Pattern};
+use crate::pattern::{
+    alphanumeric, always_match, digits, end_line_anchor, literal, one_or_more, start_line_anchor,
+    union, whitespace, wildcard, zero_or_one, ChainablePattern, Pattern,
+};
 use thiserror::Error;
 
 #[derive(Error, Debug, PartialEq, Clone)]
@@ -43,6 +46,7 @@ fn construct_pattern(
     match pattern_chars {
         ['^', ..] => Err(InvalidStartLineAnchor(char_idx)),
         ['$', ..] => Err(InvalidEndLineAnchor(char_idx)),
+        ['.', remaining @ ..] => parse_modifiers(Box::new(wildcard()), remaining, char_idx + 1),
         ['\\', char, remaining @ ..] => parse_modifiers(
             match char {
                 'd' => Box::new(digits()),
@@ -140,7 +144,7 @@ mod tests {
         assert!(match_pattern("_", "\\w"));
         assert!(!match_pattern("[]/.,", "\\w"));
     }
-    
+
     #[test]
     fn match_whitespace() {
         assert!(match_pattern(" ", "\\s"));
@@ -201,6 +205,21 @@ mod tests {
         assert!(match_pattern(" x", "[\\s\\d]x"));
         assert!(match_pattern("\nx", "[\\s\\d]x"));
         assert!(!match_pattern("ax", "[\\s\\d]x"));
+    }
+
+    #[test]
+    fn match_wildcard() {
+        assert!(match_pattern("dog", "d.g"));
+        assert!(match_pattern("dag", "d.g"));
+        assert!(match_pattern("dig", "d.g"));
+        assert!(!match_pattern("dung", "d.g"));
+        assert!(!match_pattern("dg", "d.g"));
+        assert!(!match_pattern("", "."));
+
+        // dot inside a character group should only match a literal dot
+        assert!(match_pattern(".", "[d.]"));
+        assert!(match_pattern("d", "[d.]"));
+        assert!(!match_pattern("a", "[d.]"));
     }
 
     #[test]
